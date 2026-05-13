@@ -1,6 +1,6 @@
 # git-utils
 
-Collection of standalone shell scripts for Git/GitHub operational tasks.
+Collection of standalone shell scripts and GitHub Actions workflows for Git/GitHub operational tasks.
 
 ## Files
 
@@ -8,13 +8,20 @@ Collection of standalone shell scripts for Git/GitHub operational tasks.
   - **Default mode**: `./find-dirty-git.sh [dir]` — scans given dir (or pwd) with colored progress and summary.
   - **Quiet mode**: `./find-dirty-git.sh --quiet [dir]` — suppress progress; dirty paths on stdout for piping.
   - `--help` works without git.
-- `gh/dependabot-alerts-by-repo.sh` — Scans Dependabot alerts across repos owned by a user/org. Env: `STATE`, `VISIBILITY`, `LIMIT`. Requires `gh` + `jq`.
-- `gh/require-signed-commits.sh` — Enables required signed commits on default branch for one or more repos. Requires `gh` with `repo` + `admin:repo_hook` scopes. Three modes:
+- `github/dependabot-alerts-by-repo.sh` — Scans Dependabot alerts across repos owned by a user/org. Env: `STATE`, `VISIBILITY`, `LIMIT`. Requires `gh` + `jq`.
+- `github/require-signed-commits.sh` — Enables required signed commits on default branch for one or more repos. Requires `gh` with `repo` + `admin:repo_hook` scopes. Three modes:
   - **CLI mode**: `./require-signed-commits.sh repo1 repo2` — applies to specified repos.
   - **Interactive mode**: `./require-signed-commits.sh` (no args) — guided TUI to filter repos by visibility, fork type, and access level; shows matching repos before applying.
   - **Flag mode**: `./require-signed-commits.sh --mine --public --source` — non-interactive API-based selection.
   - Flags: `--mine`, `--org <name>`, `--public`, `--private`, `--source`, `--forks`
   - `--help` works without gh auth.
+- `github/ide-auto-exec-guard.yml` — GitHub Actions workflow that detects malicious IDE/AI-agent config file changes in PRs. Key details:
+  - **Trigger**: `pull_request` on paths matching guarded config directories (`.vscode/`, `.claude/`, `.idea/`, `.cursor/`, `.codeium/`, `.continue/`, `.windsurf/`, `.github/`, `.devcontainer/`) or `workflow_dispatch`.
+  - **Critical findings** (exit 1): `runOn: "folderOpen"`, AI agent hooks (`SessionStart`, `PreToolUse`, `PostToolUse`, `SessionBreak`, `"hooks"`), exec/download patterns (`curl`, `wget`, `eval`, `exec`, base64 decode, etc.), symlink-outside-repo, dangling symlinks.
+  - **Advisory findings** (comment only, no failure): IDE/agent config directory changes, external URLs, suspicious commit authors.
+  - **PR comment**: Upserts a consolidated markdown report via `actions/github-script@v9` — updates on push, never duplicates.
+  - **Fork PRs**: Runs checks but skips comment posting (GITHUB_TOKEN is read-only from forks).
+  - No external dependencies beyond the `GITHUB_TOKEN` with `pull-requests: write` and `contents: read` permissions.
 
 ## Conventions
 
@@ -60,16 +67,27 @@ All scripts in this repository follow these conventions:
 - `0` — success (even if no work was needed, or dirty repos found — "success" means the script ran correctly).
 - `1` — error (prerequisite missing, invalid input, operation failure).
 
+### Workflow conventions
+- **Trigger paths**: Narrowly scoped `on.pull_request.paths` to avoid unnecessary runs. Always include both bare directory name (for symlink-replacement detection) and `/**` glob (for content changes).
+- **`workflow_dispatch`**: Always supported with a `base_ref` input for manual testing against arbitrary branches.
+- **Output discipline**: Progress/debug on stderr (via `echo`), structured data on stdout. Use `GITHUB_OUTPUT` for cross-step values, `GITHUB_ENV` for shared environment.
+- **Base64 encoding**: Multi-line findings passed between steps are base64-encoded (`base64 -w0` in shell, `Buffer.from(..., 'base64')` in JS) to avoid injection issues.
+- **PR comments**: Use `actions/github-script@v9` with upsert logic — find existing comment by marker text, update if found, create if not.
+- **Failure semantics**: Critical findings → exit 1 (blocks merge via branch protection). Advisory findings → comment only, exit 0.
+- **Fork safety**: Check `github.event.pull_request.head.repo.fork` before posting comments — skip comment step for fork PRs.
+- **No external dependencies**: Workflows should rely only on the `GITHUB_TOKEN` and standard GitHub Actions. No custom actions, no Docker, no secret injection.
+
 ### No build/test/lint tooling
-Plain bash, run directly.
+Plain bash and YAML workflows, run directly.
 
-## Adding a new script
+## Adding new content
 
-When adding a new script to this repository, you **must** update both documentation files:
+When adding a new script or workflow to this repository, you **must** update these documentation files:
 
-1. **`AGENTS.md`** — Add an entry under the `## Files` section describing the script, its modes, requirements, and key flags.
-2. **`README.md`** — Do two things:
-   - Add a row to the `## Quick reference` table (script name, one-line description, anchor link `→`).
-   - Add a detailed section under `## Scripts` with concrete usage examples, output samples, edge cases it handles, and requirements.
+1. **`AGENTS.md`** — Add an entry under the `## Files` section describing the item, its modes, requirements, and key flags/configuration.
+2. **`README.md`** — Add a row to the appropriate table (`## Scripts` or `## GitHub Actions`).
+3. **Detailed docs** — Add a full section with usage examples, output samples, edge cases, and requirements in the appropriate file:
+   - Bash scripts → [`SCRIPTS.md`](SCRIPTS.md)
+   - GitHub Actions workflows → a dedicated doc (e.g. [`IDE-AUTO-EXEC-GUARD.md`](IDE-AUTO-EXEC-GUARD.md)) or the relevant existing doc.
 
-The anchor in the quick-reference table must match an `<a name="...">` tag placed immediately before the corresponding `###` heading in the detailed section below.
+Each detailed section should start with an `<a name="...">` anchor tag for deep linking.

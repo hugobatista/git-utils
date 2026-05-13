@@ -1,0 +1,20 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor temp files
+*.swp
+*.swo
+*~
+
+# Environment files
+.env
+.env.local
+.env.*
+
+# Logs
+*.log
+
+# Node (if any future tooling is added)
+node_modules/
+.github/agents/*
