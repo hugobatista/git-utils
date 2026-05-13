@@ -6,9 +6,9 @@ Standalone scripts and GitHub Actions for Git and GitHub chores I got tired of d
 
 ---
 
-## IDE and AI-agent config attacks are on the rise
+## Mini Shai-Hulud spreads through IDE config files
 
-The Mini Shai-Hulud worm spreads through malicious IDE config files hidden in pull requests. When a developer opens the repo, VS Code runs the attacker's code — no clicking, no warning.
+The worm hides malicious config in pull requests. When a developer opens the repo, VS Code runs the attacker's code — no clicking, no warning.
 
 **[ide-auto-exec-guard](docs/IDE-AUTO-EXEC-GUARD.md)** is a GitHub Actions workflow that checks pull requests for the known attack patterns and flags them before they merge. It won't catch everything — no single check can — but it raises the bar and makes these attacks harder to slip through.
 
