@@ -68,6 +68,12 @@ The workflow activates on the next pull request that touches a watched config di
 4. Search for and add: `IDE auto-exec security Check`
 5. Save
 
+### 4. Also require signed commits on the main branch
+
+Branch protection that blocks malicious config files is only half the picture. You should also **require signed commits** on the same branch — this prevents attackers from pushing spoofed commits directly or bypassing the PR flow.
+
+If you manage many repos, [`github/require-signed-commits.sh`](SCRIPTS.md#script-require-signed-commits) applies this setting across dozens of repos at once. See the [script docs](SCRIPTS.md#script-require-signed-commits) for details.
+
 ---
 
 ## Required permissions

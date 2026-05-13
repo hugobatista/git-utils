@@ -145,6 +145,10 @@ If you omit the owner prefix, it defaults to the authenticated user (or the org 
 
 Archived repos and repos without admin access are skipped gracefully — counted in the summary, not a fatal error.
 
+### See also
+
+Safeguarding the merge gate is as important as the branch side. The [IDE Auto-Execution Guard](IDE-AUTO-EXEC-GUARD.md) is a GitHub Actions workflow that blocks malicious IDE and AI-agent config files from reaching your default branch through pull requests. Pair it with this script for defence in depth.
+
 ### Requirements
 
 - `gh` (GitHub CLI, authenticated with `repo` and `admin:repo_hook` scopes)
