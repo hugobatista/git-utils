@@ -62,3 +62,14 @@ All scripts in this repository follow these conventions:
 
 ### No build/test/lint tooling
 Plain bash, run directly.
+
+## Adding a new script
+
+When adding a new script to this repository, you **must** update both documentation files:
+
+1. **`AGENTS.md`** — Add an entry under the `## Files` section describing the script, its modes, requirements, and key flags.
+2. **`README.md`** — Do two things:
+   - Add a row to the `## Quick reference` table (script name, one-line description, anchor link `→`).
+   - Add a detailed section under `## Scripts` with concrete usage examples, output samples, edge cases it handles, and requirements.
+
+The anchor in the quick-reference table must match an `<a name="...">` tag placed immediately before the corresponding `###` heading in the detailed section below.
