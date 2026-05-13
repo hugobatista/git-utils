@@ -300,11 +300,18 @@ printf "  %-55s %s\n" "REPOSITORY" "STATUS"
 printf "  %-55s %s\n" "$(printf '%.0s─' {1..55})" "$(printf '%.0s─' {1..20})"
 
 for repo in "${REPOS[@]}"; do
-  # Get the repository's default branch (main, master, etc.)
-  default_branch=$(gh api "/repos/${repo}" --jq '.default_branch' 2>/dev/null || echo "")
+  # Get default branch + archived status in one call
+  info=$(gh api "/repos/${repo}" --jq '[.default_branch, .archived] | @tsv' 2>/dev/null || echo "")
 
-  if [ -z "$default_branch" ]; then
+  if [ -z "$info" ]; then
     printf "  %-55s %s\n" "$repo" "⚠️  not accessible — skipping"
+    SKIPPED+=("$repo")
+    continue
+  fi
+  read -r default_branch archived <<< "$info"
+
+  if [ "$archived" = "true" ]; then
+    printf "  %-55s %s\n" "$repo" "📦 archived — skipping"
     SKIPPED+=("$repo")
     continue
   fi
@@ -359,10 +366,16 @@ declare -a DONE=()
 for repo in "${TARGETS[@]}"; do
   printf "  %-55s " "$repo"
 
-  default_branch=$(gh api "/repos/${repo}" --jq '.default_branch' 2>/dev/null || echo "")
-  if [ -z "$default_branch" ]; then
+  info=$(gh api "/repos/${repo}" --jq '[.default_branch, .archived] | @tsv' 2>/dev/null || echo "")
+  if [ -z "$info" ]; then
     echo -e "${RED}✗${RESET}"
     FAILED+=("$repo   repo not accessible")
+    continue
+  fi
+  read -r default_branch archived <<< "$info"
+  if [ "$archived" = "true" ]; then
+    echo -e "${RED}✗${RESET}"
+    FAILED+=("$repo   repo archived")
     continue
   fi
 
