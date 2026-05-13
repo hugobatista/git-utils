@@ -1,4 +1,4 @@
-name: 🛡️ IDE Auto-Execution Guard
+name: IDE Auto-Execution Guard
 
 on:
   pull_request:
