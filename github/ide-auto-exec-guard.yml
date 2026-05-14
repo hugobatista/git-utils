@@ -333,13 +333,15 @@ jobs:
       # 6. Post a consolidated PR comment
       # ---------------------------------------------------------------
       - name: Post PR security comment
-        # Skip on workflow_dispatch (no PR context) and forked PRs (read-only token)
-        if: |
-          always() &&
-          github.event_name == 'pull_request' &&
-          github.event.pull_request.head.repo.fork != true
+        # Skip on workflow_dispatch (no PR context).
+        # For fork PRs: requires COMMENT_TOKEN secret with pull-requests:write scope.
+        # If COMMENT_TOKEN is unset, this step will fail silently (continue-on-error)
+        # and no comment is posted — checks still block on critical findings.
+        if: always() && github.event_name == 'pull_request'
+        continue-on-error: true
         uses: actions/github-script@v9
         with:
+          github-token: ${{ secrets.COMMENT_TOKEN || github.token }}
           script: |
             // Helper to decode base64 step outputs
             function decodeOutput(encoded) {
