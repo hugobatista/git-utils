@@ -23,6 +23,7 @@ A few bash utilities for repo maintenance. Plain shell, no build step, no depend
 | `find-dirty-git.sh` | Find repos with uncommitted changes, recursively |
 | `github/dependabot-alerts-by-repo.sh` | Generate a Dependabot alert report across repos |
 | `github/require-signed-commits.sh` | Enable required signed commits on many repos at once |
+| `github/pr-disable-maintainer-edit.sh` | Disable "Allow edits by maintainers" on your pull requests |
 
 → [Usage and examples](docs/SCRIPTS.md)
 
@@ -43,7 +44,7 @@ Drop-in workflow files for your own repositories. Copy the YAML, commit, done.
 | Tool | Needed for |
 |------|-----------|
 | `git` | `find-dirty-git.sh` |
-| `gh` (logged in) + `jq` | Dependabot and signed-commits scripts |
+| `gh` (logged in) + `jq` | Dependabot, signed-commits, and PR-disable-maintainer-edit scripts |
 | `GITHUB_TOKEN` (built in) | `ide-auto-exec-guard` workflow |
 
 Script conventions and how to add new ones live in [docs/AGENTS.md](docs/AGENTS.md).

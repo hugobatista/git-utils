@@ -15,6 +15,12 @@ Collection of standalone shell scripts and GitHub Actions workflows for Git/GitH
   - **Flag mode**: `./require-signed-commits.sh --mine --public --source` — non-interactive API-based selection.
   - Flags: `--mine`, `--org <name>`, `--public`, `--private`, `--source`, `--forks`
   - `--help` works without gh auth.
+- `github/pr-disable-maintainer-edit.sh` — Disables "Allow edits by maintainers" on pull requests authored by a user (defaults to the authenticated user). Requires `gh` + `jq`. Three modes:
+  - **Direct mode**: `./pr-disable-maintainer-edit.sh owner/repo/#123` — targets specific PRs.
+  - **Interactive mode**: `./pr-disable-maintainer-edit.sh` (no args) — guided TUI to choose author, repo scope, and PR state; shows matching PRs with current status before applying.
+  - **Flag mode**: `./pr-disable-maintainer-edit.sh --user octocat --state all` — non-interactive API-based selection.
+  - Flags: `--dry-run`, `--user <login>`, `--repo <owner/repo>`, `--state <open|closed|all>`
+  - `--help` works without gh auth.
 - `github/ide-auto-exec-guard.yml` — GitHub Actions workflow that detects malicious IDE/AI-agent config file changes in PRs. Key details:
   - **Trigger**: `pull_request` on paths matching guarded config directories (`.vscode/`, `.claude/`, `.idea/`, `.cursor/`, `.codeium/`, `.continue/`, `.windsurf/`, `.github/`, `.devcontainer/`) or `workflow_dispatch`.
   - **Critical findings** (exit 1): `runOn: "folderOpen"`, AI agent hooks (`SessionStart`, `PreToolUse`, `PostToolUse`, `SessionBreak`, `"hooks"`), exec/download patterns (`curl`, `wget`, `eval`, `exec`, base64 decode, etc.), symlink-outside-repo, dangling symlinks.

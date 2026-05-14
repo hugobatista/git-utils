@@ -152,3 +152,87 @@ Safeguarding the merge gate is as important as the branch side. The [IDE Auto-Ex
 ### Requirements
 
 - `gh` (GitHub CLI, authenticated with `repo` and `admin:repo_hook` scopes)
+
+---
+
+<a name="script-pr-disable-maintainer-edit"></a>
+## `github/pr-disable-maintainer-edit.sh`
+
+Disables "Allow edits by maintainers" on pull requests authored by a user (defaults to the authenticated user). Prevents maintainers of upstream/base repos from pushing changes to your PR branches — a useful security measure if you don't trust maintainers with write access to your branch, or want to avoid supply-chain injection via PR branch pushes.
+
+### Three modes
+
+**Direct mode** — target specific PRs by identifier:
+
+```bash
+./github/pr-disable-maintainer-edit.sh my-org/my-repo/#42
+./github/pr-disable-maintainer-edit.sh my-org/my-repo/#12 other-org/app/#7
+```
+
+The `#` is optional — `owner/repo/123` works too.
+
+**Flag mode** — select PRs by criteria, non-interactive:
+
+```bash
+# All your own open PRs (default)
+./github/pr-disable-maintainer-edit.sh
+
+# Preview what would change, make no changes
+./github/pr-disable-maintainer-edit.sh --dry-run
+
+# All of octocat's PRs across all repos, including closed
+./github/pr-disable-maintainer-edit.sh --user octocat --state all
+
+# All PRs authored by you in a specific repo
+./github/pr-disable-maintainer-edit.sh --repo my-org/my-repo
+```
+
+**Interactive mode** — no args, no flags. It walks you through filter choices (author, repo scope, PR state), shows the matching PRs with their current `maintainer_can_modify` status, and asks for confirmation before making any changes:
+
+```bash
+./github/pr-disable-maintainer-edit.sh
+```
+
+### What it does
+
+1. Discovers PRs based on the chosen mode and filters
+2. Fetches each PR's `maintainer_can_modify` setting to determine current status
+3. Shows a table of all matching PRs with their state and whether they need updating
+4. Displays a breakdown (already disabled / will be disabled / inaccessible)
+5. Asks for confirmation (interactive mode only)
+6. Issues a `PATCH` to each target PR to set `maintainer_can_modify: false`
+
+### Example output
+
+```
+  my-org/my-repo #1    Fix login timeout                           OPEN    already disabled
+  my-org/my-repo #2    Update dependency versions                  OPEN    will be disabled
+  other-org/app   #15  Add rate limiting middleware                CLOSED  already disabled
+
+  2 already disabled  |  1 will be disabled  |  0 skipped
+
+Proceed to disable maintainer edits on these PRs? [y/N]: y
+  [1/1] my-org/my-repo #2 ... ✓
+
+── Summary ──────────────────────────────────────────
+  ✓ Disabled:  1 PRs
+  ✗ Failed:    0 PRs
+  ⏭  Skipped:  0 PRs (not accessible)
+  ✅ Already:  2 PRs (already disabled)
+
+Done.
+```
+
+### Edge cases handled
+
+- PRs where `maintainer_can_modify` is already `false` — skipped (counted as already compliant)
+- PRs the user doesn't have permission to query or modify — skipped, counted in summary
+- PRs that don't exist or were deleted — skipped gracefully, not a crash
+- Repos that are inaccessible or renamed — same treatment
+- No PRs found at all — exits 0 with a note
+- `--dry-run` shows the table and breakdown without applying changes (works in all modes)
+
+### Requirements
+
+- `gh` (GitHub CLI, authenticated)
+- `jq`
